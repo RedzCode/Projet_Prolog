@@ -34,10 +34,17 @@ boucle(P, Tours) :-
         ( Colonne = 'Q' ; Colonne = 'q' -> 
             writeln('Fin du puissance 4!')
         ;
-            ajout_jeton(P,Token,Colonne,NP),
-            afficher_etat(NP),
-            ToursSuivant is Tours + 1,
-            boucle(NP, ToursSuivant)   
+            reverse(P, RP), % renverser le plateau
+            case_disponible(Colonne, RP, 42, Position),
+            (Position = false ->
+                writeln('Erreur !'),
+                boucle(P, Tours)
+            ;
+                ajout_jeton(P,Token,Position,NP),
+                afficher_etat(NP),
+                ToursSuivant is Tours + 1,
+                boucle(NP, ToursSuivant)    
+            )
         )
     ;
         writeln('Erreur !'),
@@ -51,7 +58,7 @@ boucle(P, Tours) :-
 plateau(P) :- plateau(P,42).
 % cas de base, quand il n'y a plus de case à ajouter
 plateau([], 0) :- !.
-% Ajout un 0 dans une liste N fois  
+% Ajout un . dans une liste N fois  
 plateau(['.'|Q], N) :- 
     N1 is N-1,
     plateau(Q, N1).
@@ -85,6 +92,45 @@ ajout_jeton([PT|PQ],Jeton,Position,[PT|NouveauQ]) :-
     NouvellePosition is Position - 1, 
     ajout_jeton(PQ, Jeton, NouvellePosition, NouveauQ).
 
+numero_indice(Colonne) :-
+    IndiceCase is 35 + Colonne.
+
+case_disponible(_, _, 0, Position) :-
+    Position = false.
+
+case_disponible(Colonne, [PT|PQ], N, Position) :-
+    TmpColonne is N mod 7, % obtenir la colonne associé à N
+    ( ( TmpColonne = Colonne; (Colonne = 7, TmpColonne = 0) )  ->
+        ( PT = '.' ->
+            Position = N
+        ;
+            N1 is N-1,
+            case_disponible(Colonne, PQ, N1, Position)
+        )
+    ;
+        N1 is N-1,
+        case_disponible(Colonne, PQ, N1, Position)
+    ).
+    % verif si TmpColonne = Colonne
+    % Si TmpColonne = Colonne 
+        % => verif si  PQ is empty
+        % Si empty 
+            % => casedispo = N
+        % Si non empty
+            %N1 is N-1
+            % => case_dispo(Colonne, PQ, N1)
+    % Si tmpColonne != Colonne
+        % N1 us N-1
+        % => case_dispo(Colonne, PQ, N1)
+
+
+
+%%% Fonctions utiles
+% Taille d'une liste
+taille_liste([], 0).
+taille_liste([_|Q],Size) :- taille_liste(Q,S), Size is S+1 .
+% Vider une liste
+vider_liste(NewList) :- NewList = [].
 % Verifier la validité de l'entrée du joueur
 verifier_validite(Colonne, Validite) :-
     ( est_nombre(Colonne) ->
@@ -94,42 +140,16 @@ verifier_validite(Colonne, Validite) :-
     ; 
         Validite = false
     ).
-
-numero_indice(Colonne) :-
-    IndiceCase is 35 + Colonne.
-
-% Transformer numéro de colonne en indice sur le plateau
-case_disponible(IndiceCase, P) :-
-    % si P[indiceColonne] est == '.' alors on retourne IndiceColonne
-    NouveauIndiceCase is IndiceCase - 6,
-    recuperer_indice(NouveauIndiceCase, P).
-
-% on parcourt le plateau pour voir les cases disponibles
-% on parcourt en incrémentant donc il faut aller une case de colonne en plus
-% pour voir si elle est remplie et donner l'indice de la case precedente dans la colonne
-% Ou alors voir comment parcourir à l'envers
-% reverse(List, ReversedList), % Reverse the list
-case_disponible(IndiceCase, [PT|PQ], N) :-
-    (IndiceCase == N -> NouveauIndiceCase is IndiceCase - 6; true),
-    N1 is N-1,
-    case_disponible(NouveauIndiceCase, PQ, N1).
-
-%%% Fonctions utiles
-% Taille d'une liste
-taille_liste([], 0).
-taille_liste([_|Q],Size) :- taille_liste(Q,S), Size is S+1 .
-% Vider une liste
-vider_liste(NewList) :- NewList = [].
 % Verifier si c'est un numéro
 est_nombre(Colonne) :-
     number(Colonne),       
     Colonne >= 1,          
     Colonne =< 7.          
 % Vérifier si l'entrée est un Q
-% TODO : ajouter petit q
 est_quitter(Colonne) :-
     Colonne = 'Q';
-    Colonne = 'q'.        
+    Colonne = 'q'.      
+
 
 
 
