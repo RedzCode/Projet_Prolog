@@ -20,28 +20,30 @@ choix_joueurs() :-
 
 %%% Boucle du jeu
 boucle(P, Tours) :- 
-    writeln(Tours mod 2),
+    writeln('**********************'),
     M is Tours mod 2,
     (M == 0 -> Token = 'R'; Token = 'J'),
-    writeln(Token),
     write('Tours '),
     writeln(Tours+1),
     write('Joueur '),
     writeln(Token),
-    writeln('Entrez un numéro de colonne (or Q to exit):'),
-    read(Colonne), % Entrée utilisateur
-    ( Colonne = 'Q' -> 
-        writeln('Fin du puissance 4!')
-    ;
-        (Colonne < 1 -> 
-        boucle(P, Tours)
+    writeln('Entrez un numéro de colonne (Q ou q pour quitter):'),
+    read(Colonne),
+    verifier_validite(Colonne, Validite),
+    ( Validite == true -> 
+        ( Colonne = 'Q' ; Colonne = 'q' -> 
+            writeln('Fin du puissance 4!')
         ;
-        ajout_jeton(P,Token,Colonne,NP),
-        afficher_etat(NP),
-        ToursSuivant is Tours + 1,
-        boucle(NP, ToursSuivant)   
+            ajout_jeton(P,Token,Colonne,NP),
+            afficher_etat(NP),
+            ToursSuivant is Tours + 1,
+            boucle(NP, ToursSuivant)   
         )
+    ;
+        writeln('Erreur !'),
+        boucle(P, Tours)
     ).
+
 
 
 %%% Initialisation du plateau de jeu %%%
@@ -83,10 +85,15 @@ ajout_jeton([PT|PQ],Jeton,Position,[PT|NouveauQ]) :-
     NouvellePosition is Position - 1, 
     ajout_jeton(PQ, Jeton, NouvellePosition, NouveauQ).
 
-%verif
-verifier_validite(Colonne, validite) :-
-    % verif entre 1 et 7
-    write('test')
+% Verifier la validité de l'entrée du joueur
+verifier_validite(Colonne, Validite) :-
+    ( est_nombre(Colonne) ->
+        Validite = true
+    ; est_quitter(Colonne) ->
+        Validite = true
+    ; 
+        Validite = false
+    ).
 
 numero_indice(Colonne) :-
     IndiceCase is 35 + Colonne.
@@ -95,7 +102,7 @@ numero_indice(Colonne) :-
 case_disponible(IndiceCase, P) :-
     % si P[indiceColonne] est == '.' alors on retourne IndiceColonne
     NouveauIndiceCase is IndiceCase - 6,
-    recuperer_indice(NouveauIndiceCase, P).*/
+    recuperer_indice(NouveauIndiceCase, P).
 
 % on parcourt le plateau pour voir les cases disponibles
 % on parcourt en incrémentant donc il faut aller une case de colonne en plus
@@ -105,14 +112,24 @@ case_disponible(IndiceCase, P) :-
 case_disponible(IndiceCase, [PT|PQ], N) :-
     (IndiceCase == N -> NouveauIndiceCase is IndiceCase - 6; true),
     N1 is N-1,
-    case_disponible(NouveauIndiceCase, PQ, N1)
+    case_disponible(NouveauIndiceCase, PQ, N1).
 
 %%% Fonctions utiles
 % Taille d'une liste
 taille_liste([], 0).
 taille_liste([_|Q],Size) :- taille_liste(Q,S), Size is S+1 .
-% Empty list 
+% Vider une liste
 vider_liste(NewList) :- NewList = [].
+% Verifier si c'est un numéro
+est_nombre(Colonne) :-
+    number(Colonne),       
+    Colonne >= 1,          
+    Colonne =< 7.          
+% Vérifier si l'entrée est un Q
+% TODO : ajouter petit q
+est_quitter(Colonne) :-
+    Colonne = 'Q';
+    Colonne = 'q'.        
 
 
 
