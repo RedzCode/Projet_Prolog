@@ -30,7 +30,8 @@ boucle(P, Tours) :-
     M is Tours mod 2,
     (M == 0 -> Token = 'R'; Token = 'J'),
     write('Tours '),
-    writeln(Tours+1),
+    ActuelTour is Tours + 1,
+    writeln((ActuelTour)),
     write('Joueur '),
     writeln(Token),
     writeln('Entrez un numéro de colonne (Q ou q pour quitter):'),
@@ -96,9 +97,7 @@ afficher_plateau([T|Q]) :-
 %%%%%% Gestion des jetons %%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% recreer un  nouveau plateau qui au bon index on ajoute  la valeur ?
-% TODO : ajouter une fonction qui verif position entré et si en dehors pas aller dans ajout_jeton
-% mais du coup on peut gerer cette verif au moment ou l'utilisateur ecrit (2,3)
+
 % case 42 c'est la position 42, case 1 position 1, quand on cree le tableau la derniere case est crée
 
 ajout_jeton([_|PQ],Jeton,1,[Jeton|PQ]).
@@ -107,9 +106,6 @@ ajout_jeton([PT|PQ],Jeton,Position,[PT|NouveauQ]) :-
     Position > 1,
     NouvellePosition is Position - 1, 
     ajout_jeton(PQ, Jeton, NouvellePosition, NouveauQ).
-
-numero_indice(Colonne) :-
-    IndiceCase is 35 + Colonne.
 
 case_disponible(_, _, 0, Position) :-
     Position = false.
@@ -138,6 +134,9 @@ case_disponible(Colonne, [PT|PQ], N, Position) :-
     % Si tmpColonne != Colonne
         % N1 us N-1
         % => case_dispo(Colonne, PQ, N1)
+
+case_disponible(_, _, 0, Position) :-
+    Position = false.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
