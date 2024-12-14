@@ -4,6 +4,10 @@
 % => avoir 4 jetons sur une meme colonne
 % 6 lignes, 7 colonnes
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%% Gestion du jeu %%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 Token(rouge).
 Token(jaune).
 
@@ -18,7 +22,9 @@ choix_joueurs() :-
     % choix couleur si vs IA
     writeln('Le premier joueur joue les rouges (R) ! Le deuxième les jaunes (J) !').
 
-%%% Boucle du jeu
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%% Boucle du jeu %%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
 boucle(P, Tours) :- 
     writeln('**********************'),
     M is Tours mod 2,
@@ -52,8 +58,10 @@ boucle(P, Tours) :-
     ).
 
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%% Initialisation du plateau de jeu %%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%%% Initialisation du plateau de jeu %%%
 % Creation d'un plateau de 6 lignes, 7 colonnes soit 42 cases
 plateau(P) :- plateau(P,42).
 % cas de base, quand il n'y a plus de case à ajouter
@@ -63,7 +71,11 @@ plateau(['.'|Q], N) :-
     N1 is N-1,
     plateau(Q, N1).
 
-%%% Etat du jeu
+
+%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%% Etat du jeu %%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%
+
 % Afficher etat du jeu
 afficher_etat(P) :-
     writeln(''),
@@ -79,7 +91,11 @@ afficher_plateau([T|Q]) :-
   ( M == 1 -> writeln(''); true),
   afficher_plateau(Q).
 
-%%% Gestion des jetons %%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%% Gestion des jetons %%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 % recreer un  nouveau plateau qui au bon index on ajoute  la valeur ?
 % TODO : ajouter une fonction qui verif position entré et si en dehors pas aller dans ajout_jeton
 % mais du coup on peut gerer cette verif au moment ou l'utilisateur ecrit (2,3)
@@ -124,8 +140,10 @@ case_disponible(Colonne, [PT|PQ], N, Position) :-
         % => case_dispo(Colonne, PQ, N1)
 
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%% Fonctions utiles %%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%%% Fonctions utiles
 % Taille d'une liste
 taille_liste([], 0).
 taille_liste([_|Q],Size) :- taille_liste(Q,S), Size is S+1 .
@@ -145,6 +163,7 @@ est_nombre(Colonne) :-
     number(Colonne),       
     Colonne >= 1,          
     Colonne =< 7.          
+
 % Vérifier si l'entrée est un Q
 est_quitter(Colonne) :-
     Colonne = 'Q';
