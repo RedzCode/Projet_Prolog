@@ -15,22 +15,29 @@ debut() :-
     plateau(P),
     afficher_etat(P),
     choix_joueurs(),
-    boucle(P, 0).
+    boucle(P, 0),
+    writeln('Fin du puissance 4!').
 
 choix_joueurs() :-
     % choix J vs J
     % choix couleur si vs IA
     writeln('Le premier joueur joue les rouges (R) ! Le deuxième les jaunes (J) !').
 
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%% Boucle du jeu %%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 boucle(P, Tours) :- 
     writeln('**********************'),
     M is Tours mod 2,
     (M == 0 -> Token = 'R'; Token = 'J'),
-    write('Tours '),
+
+
     ActuelTour is Tours + 1,
+    (ActuelTour = 43 -> writeln('Egalité !'); true),
+
+    write('Tours '),
     writeln((ActuelTour)),
     write('Joueur '),
     writeln(Token),
@@ -39,7 +46,7 @@ boucle(P, Tours) :-
     verifier_validite(Colonne, Validite),
     ( Validite == true -> 
         ( Colonne = 'Q' ; Colonne = 'q' -> 
-            writeln('Fin du puissance 4!')
+            true
         ;
             reverse(P, RP), % renverser le plateau
             case_disponible(Colonne, RP, 42, Position),

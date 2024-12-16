@@ -4,3 +4,4 @@
     (Taille == Position -> NouveauT is Jeton; NouveauT is PT),
     ajout_jeton(PQ, Jeton, Position, NouveauQ).*/
 
+get_single_char/1 => input one char
