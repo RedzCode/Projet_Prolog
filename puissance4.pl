@@ -56,10 +56,17 @@ boucle(P, Tours) :-
             ;
                 ajout_jeton(P,Token,Position,NP),
                 afficher_etat(NP),
-                verifier_victoire(P, Token, Position, Victoire),
-                writeln(Victoire),
-                ToursSuivant is Tours + 1,
-                boucle(NP, ToursSuivant)    
+                verifier_victoire(RP, Token, Position, Victoire),
+                (Victoire = true ->
+                    nl,
+                    write('Vous avez gagné joueur '),
+                    writeln(Token),
+                    true
+                ;
+                    ToursSuivant is Tours + 1,
+                    boucle(NP, ToursSuivant) 
+                )
+   
             )
         )
     ;
@@ -101,9 +108,10 @@ afficher_plateau([T|Q]) :-
   ( M == 1 -> writeln(''); true),
   afficher_plateau(Q).
 
-verifier_victoire([PT,PQ], Token, Position, Victoire) :-
-    Victoire = false.
-
+verifier_victoire(P, Token, Position, Victoire) :-
+    position_a_coord(Position, PosLigne, PosColonne),
+    jetons_alignes(P, Token, PosLigne, PosColonne, 42, 0, 0, 0, 0, Victoire).
+    
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%% Gestion des jetons %%%%%%
@@ -138,7 +146,7 @@ case_disponible(Colonne, [PT|PQ], N, Position) :-
     % verif si TmpColonne = Colonne
     % Si TmpColonne = Colonne 
         % => verif si  PQ is empty
-        % Si empty 
+        % Si empty  CptL, CptC, CptDD, CptDM
             % => casedispo = N
         % Si non empty
             %N1 is N-1
@@ -146,6 +154,106 @@ case_disponible(Colonne, [PT|PQ], N, Position) :-
     % Si tmpColonne != Colonne
         % N1 us N-1
         % => case_dispo(Colonne, PQ, N1)
+
+jetons_alignes(_,_, _, _, -1, _, _, _, _, Victoire) :- 
+    Victoire = true.
+
+jetons_alignes(_,_, _, _, 0, _, _, _, _, Victoire) :- 
+    Victoire = false.
+
+
+jetons_alignes([PT|PQ],Token, PosLigne, PosColonne, N, CptL, CptC, CptDDs, CptDMt, Victoire) :-
+    % Passer N en coordonées 2D
+    position_a_coord(N, Ligne, Colonne),
+    % Verifier si CoordN correspond à ligne, colonne, diagonales..
+    jeton_dans_ligne(PosLigne, Ligne, DansLigne),
+    jeton_dans_colonne(PosColonne, Colonne, DansColonne),
+    jeton_dans_diagDs(PosLigne, PosColonne, Ligne, Colonne,DansDiagDs),
+    jeton_dans_diagMt(PosLigne, PosColonne, Ligne, Colonne, DansDiagMt),
+    
+    % Si la case est dans la même ligne que le jeton joué
+    (DansLigne == true ->
+        ( PT == Token ->
+            NCptL is CptL + 1 
+        ;
+            NCptL is 0
+        )
+    ; 
+        NCptL is CptL
+    ),
+    
+     % Si la case est dans la même colonne que le jeton joué
+    (DansColonne == true ->
+        ( PT == Token ->
+            NCptC is CptC + 1 
+        ;
+            NCptC is 0
+        )
+    ; 
+        NCptC is CptC
+    ),
+
+    % Si la case est dans la même diag descendante que le jeton joué
+    (DansDiagDs == true ->
+        ( PT == Token ->
+            NCptDDs is CptDDs + 1 
+        ;
+            NCptDDs is 0
+        )
+    ; 
+        NCptDDs is CptDDs
+    ),
+
+    
+    % Si la case est dans la même diag montante que le jeton joué
+    (DansDiagMt == true ->
+        ( PT == Token ->
+            NCptDMt is CptDMt + 1 
+        ;
+            NCptDMt is 0
+        )
+    ; 
+        NCptDMt is CptDMt
+    ),
+
+
+    ( NCptL == 3; NCptC == 3; NCptDDs ==3; NCptDMt == 3 ->
+        jetons_alignes(_,_, _, _, -1,NCptL, NCptC, NCptDDs, NCptDMt, Victoire)
+    ;  
+        N1 is N -1,
+        jetons_alignes(PQ,Token, PosLigne, PosColonne, N1, NCptL, NCptC, NCptDDs, NCptDMt,Victoire)  
+    ).
+
+
+jeton_dans_ligne(PosLigne,Ligne, DansLigne) :-
+    ( Ligne == PosLigne ->
+        DansLigne = true
+    ; 
+        DansLigne = false
+    ).
+
+jeton_dans_colonne(PosColonne, Colonne, DansColonne) :-
+    ( Colonne == PosColonne ->
+        DansColonne = true
+    ; 
+        DansColonne = false
+    ).
+
+% jeton situé dans la même diagonale descendante
+jeton_dans_diagDs(PosLigne, PosColonne, Ligne, Colonne, DansDiagDs) :-
+    ( PosLigne - PosColonne =:= Ligne - Colonne ->
+        DansDiagDs = true
+    ; 
+        DansDiagDs = false
+    ).
+
+jeton_dans_diagMt(PosLigne, PosColonne, Ligne, Colonne, DansDiagMt) :-
+    ( PosLigne + PosColonne =:= Ligne + Colonne ->
+        DansDiagMt = true
+    ; 
+        DansDiagMt = false
+    ).
+
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -174,7 +282,13 @@ est_nombre(Colonne) :-
 % Vérifier si l'entrée est un Q
 est_quitter(Colonne) :-
     Colonne = 'Q';
-    Colonne = 'q'.      
+    Colonne = 'q'.
+
+position_a_coord(Position, Ligne, Colonne) :-
+    divmod(Position, 7, Quotient, Reste),
+    (Reste = 0 -> Ligne is Quotient; Ligne is Quotient + 1),
+    Mod is Position mod 7,
+    ( Mod = 0  -> Colonne is 7; Colonne is Position mod 7).      
 
 
 
