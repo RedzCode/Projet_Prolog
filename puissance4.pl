@@ -56,6 +56,8 @@ boucle(P, Tours) :-
             ;
                 ajout_jeton(P,Token,Position,NP),
                 afficher_etat(NP),
+                verifier_victoire(P, Token, Position, Victoire),
+                writeln(Victoire),
                 ToursSuivant is Tours + 1,
                 boucle(NP, ToursSuivant)    
             )
@@ -98,6 +100,9 @@ afficher_plateau([T|Q]) :-
   write('|'),
   ( M == 1 -> writeln(''); true),
   afficher_plateau(Q).
+
+verifier_victoire([PT,PQ], Token, Position, Victoire) :-
+    Victoire = false.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -142,9 +147,6 @@ case_disponible(Colonne, [PT|PQ], N, Position) :-
         % N1 us N-1
         % => case_dispo(Colonne, PQ, N1)
 
-case_disponible(_, _, 0, Position) :-
-    Position = false.
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%% Fonctions utiles %%%%%%
@@ -153,8 +155,7 @@ case_disponible(_, _, 0, Position) :-
 % Taille d'une liste
 taille_liste([], 0).
 taille_liste([_|Q],Size) :- taille_liste(Q,S), Size is S+1 .
-% Vider une liste
-vider_liste(NewList) :- NewList = [].
+
 % Verifier la validité de l'entrée du joueur
 verifier_validite(Colonne, Validite) :-
     ( est_nombre(Colonne) ->
