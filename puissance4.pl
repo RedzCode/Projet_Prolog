@@ -8,27 +8,31 @@
 %%%%%% Gestion du jeu %%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-Token(rouge).
-Token(jaune).
-
 debut() :-
     plateau(P),
     afficher_etat(P),
-    choix_joueurs(),
-    boucle(P, 0),
+    choix_joueurs(JvJ),
+    boucle(P, 0, JvJ),
     writeln('Fin du puissance 4!').
 
-choix_joueurs() :-
+choix_joueurs(JvJ) :-
     % choix J vs J
     % choix couleur si vs IA
-    writeln('Le premier joueur joue les rouges (R) ! Le deuxième les jaunes (J) !').
-
-
+    writeln('Jouez contre une "IA" ? Entrez o (oui) ou n (non):'),
+    read(Reponse),
+    ( Reponse = 'n'-> 
+        writeln('Le premier joueur joue les rouges (R) ! Le deuxième les jaunes (J) !'),
+        JvJ = true
+    ;
+        writeln('Le premier joueur joue les rouges (R) ! IA les jaunes (J) !'),
+        JvJ = false
+    ).
+    
 %%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%% Boucle du jeu %%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-boucle(P, Tours) :- 
+boucle(P, Tours, JvJ) :- 
     writeln('**********************'),
     M is Tours mod 2,
     (M == 0 -> Token = 'R'; Token = 'J'),
@@ -39,6 +43,14 @@ boucle(P, Tours) :-
 
     write('Tours '),
     writeln((ActuelTour)),
+
+    (JvJ = true ; Token = 'R' -> 
+        actions_joueur(P, Tours, Token, JvJ)
+    ;
+        actions_IA(P, Tours, Token, JvJ)
+    ).
+
+actions_joueur(P,Tours,Token, JvJ) :-
     write('Joueur '),
     writeln(Token),
     writeln('Entrez un numéro de colonne (Q ou q pour quitter):'),
@@ -52,7 +64,7 @@ boucle(P, Tours) :-
             case_disponible(Colonne, RP, 42, Position),
             (Position = false ->
                 writeln('Erreur !'),
-                boucle(P, Tours)
+                boucle(P, Tours,JvJ)
             ;
                 ajout_jeton(P,Token,Position,NP),
                 afficher_etat(NP),
@@ -64,14 +76,46 @@ boucle(P, Tours) :-
                     true
                 ;
                     ToursSuivant is Tours + 1,
-                    boucle(NP, ToursSuivant) 
+                    boucle(NP, ToursSuivant, JvJ) 
                 )
    
             )
         )
     ;
         writeln('Erreur !'),
-        boucle(P, Tours)
+        boucle(P, Tours, JvJ)
+    ).
+
+actions_IA(P,Tours,Token,JvJ) :-
+    write('IA '),
+    writeln(Token),
+
+    random_between(1,7, Colonne),
+
+    verifier_validite(Colonne, Validite),
+    ( Validite == true -> 
+        reverse(P, RP), % renverser le plateau
+        case_disponible(Colonne, RP, 42, Position),
+        (Position = false ->
+            writeln('Erreur !'),
+            boucle(P, Tours, JvJ)
+        ;
+            ajout_jeton(P,Token,Position,NP),
+            afficher_etat(NP),
+            verifier_victoire(RP, Token, Position, Victoire),
+            (Victoire = true ->
+                nl,
+                write('IA a gagné '),
+                true
+            ;
+                ToursSuivant is Tours + 1,
+                boucle(NP, ToursSuivant, JvJ) 
+            )
+
+        )
+        
+    ;
+        boucle(P, Tours, JvJ)
     ).
 
 
@@ -117,9 +161,6 @@ verifier_victoire(P, Token, Position, Victoire) :-
 %%%%%% Gestion des jetons %%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-
-% case 42 c'est la position 42, case 1 position 1, quand on cree le tableau la derniere case est crée
-
 ajout_jeton([_|PQ],Jeton,1,[Jeton|PQ]).
 
 ajout_jeton([PT|PQ],Jeton,Position,[PT|NouveauQ]) :-
@@ -160,7 +201,6 @@ jetons_alignes(_,_, _, _, -1, _, _, _, _, Victoire) :-
 
 jetons_alignes(_,_, _, _, 0, _, _, _, _, Victoire) :- 
     Victoire = false.
-
 
 jetons_alignes([PT|PQ],Token, PosLigne, PosColonne, N, CptL, CptC, CptDDs, CptDMt, Victoire) :-
     % Passer N en coordonées 2D
