@@ -93,18 +93,37 @@ actions_joueur(Jeton, Colonne) :-
 actions_IA(Jeton, Colonne) :-
     write('IA '),
     writeln(Jeton),
-    random_between(1,3, Pos1),
-    position_a_coord(Pos1, Pos1Ligne, Pos1Colonne),
-    jetons_alignes(P, Jeton, Pos1Ligne, Pos1Colonne, 42, 0, 0, 0, 0,NCptL_Pos1, NCptC_Pos1, NCptDDs_Pos1, NCptDMt_Pos1),
-    random_between(5,7, Pos2),
-    position_a_coord(Pos2, Pos2Ligne, Pos2Colonne),
-    jetons_alignes(P, Jeton, Pos2Ligne, Pos2Colonne, 42, 0, 0, 0, 0,NCptL_Pos2, NCptC_Pos2, NCptDDs_Pos2, NCptDMt_Pos2),
-    position_a_coord(4, Pos3Ligne, Pos3Colonne),
-    jetons_alignes(P, Jeton, Pos3Ligne, Pos3Colonne, 42, 0, 0, 0, 0,NCptL_Pos3, NCptC_Pos3, NCptDDs_Pos3, NCptDMt_Pos3),
-    
-    member(3, [NCptL_Pos1, NCptC_Pos1, NCptDDs_Pos1, NCptDMt_Pos1,NCptL_Pos2, NCptC_Pos2, NCptDDs_Pos2, NCptDMt_Pos2, NCptC_Pos3, NCptDDs_Pos3, NCptDMt_Pos3]),
 
-    Colonne is 
+    random_between(1, 3, Pos1),
+    position_a_coord(Pos1, Pos1Ligne, Pos1Colonne),
+    jetons_alignes(P, Jeton, Pos1Ligne, Pos1Colonne, 42, 0, 0, 0, 0, NCptL_Pos1, NCptC_Pos1, NCptDDs_Pos1, NCptDMt_Pos1),
+    Score1 is NCptL_Pos1 + NCptC_Pos1 + NCptDDs_Pos1 + NCptDMt_Pos1,
+
+    random_between(5, 7, Pos2),
+    position_a_coord(Pos2, Pos2Ligne, Pos2Colonne),
+    jetons_alignes(P, Jeton, Pos2Ligne, Pos2Colonne, 42, 0, 0, 0, 0, NCptL_Pos2, NCptC_Pos2, NCptDDs_Pos2, NCptDMt_Pos2),
+    Score2 is NCptL_Pos2 + NCptC_Pos2 + NCptDDs_Pos2 + NCptDMt_Pos2,
+
+    Pos3 is 4,
+    position_a_coord(Pos3, Pos3Ligne, Pos3Colonne),
+    jetons_alignes(P, Jeton, Pos3Ligne, Pos3Colonne, 42, 0, 0, 0, 0, NCptL_Pos3, NCptC_Pos3, NCptDDs_Pos3, NCptDMt_Pos3),
+    Score3 is NCptL_Pos3 + NCptC_Pos3 + NCptDDs_Pos3 + NCptDMt_Pos3,
+
+    % Debugging scores
+    writeln(['Pos1 Score:', Score1]),
+    writeln(['Pos2 Score:', Score2]),
+    writeln(['Pos3 Score:', Score3]),
+
+    ( Score1 > Score2, Score1 > Score3 ->
+        Colonne = Pos1
+    ; Score2 > Score1, Score2 > Score3 ->
+        Colonne = Pos2
+    ;
+        Colonne = Pos3
+    ),
+    
+    writeln(Colonne)
+    .
     % tester 3 positions differentes
     % utiliser jetons_alignes
     % prendre la meilleur des 3 positions
