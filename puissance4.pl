@@ -20,12 +20,15 @@ choix_joueurs(JvJ) :-
     % choix couleur si vs IA
     writeln('Jouez contre une "IA" ? Entrez o (oui) ou n (non):'),
     read(Reponse),
-    ( Reponse = 'n'-> 
+    ( Reponse == 'n'-> 
         writeln('Le premier joueur joue les rouges (R) ! Le deuxième les jaunes (J) !'),
         JvJ = true
-    ;
+    ; Reponse == 'o'-> 
         writeln('Le premier joueur joue les rouges (R) ! IA les jaunes (J) !'),
         JvJ = false
+    ;
+        choix_joueurs(NJvJ),
+        JvJ = NJvJ  
     ).
     
 %%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -35,8 +38,7 @@ choix_joueurs(JvJ) :-
 boucle(P, Tours, JvJ) :- 
     writeln('**********************'),
     M is Tours mod 2,
-    (M == 0 -> Token = 'R'; Token = 'J'),
-
+    (M == 0 -> Jeton = 'R'; Jeton = 'J'),
 
     ActuelTour is Tours + 1,
     (ActuelTour = 43 -> writeln('Egalité !'); true),
@@ -44,17 +46,12 @@ boucle(P, Tours, JvJ) :-
     write('Tours '),
     writeln((ActuelTour)),
 
-    (JvJ = true ; Token = 'R' -> 
-        actions_joueur(P, Tours, Token, JvJ)
+    ((JvJ = true; Jeton = 'R') -> 
+        actions_joueur(Jeton, Colonne) 
     ;
-        actions_IA(P, Tours, Token, JvJ)
-    ).
+        actions_IA(Jeton, Colonne)
+    ),
 
-actions_joueur(P,Tours,Token, JvJ) :-
-    write('Joueur '),
-    writeln(Token),
-    writeln('Entrez un numéro de colonne (Q ou q pour quitter):'),
-    read(Colonne),
     verifier_validite(Colonne, Validite),
     ( Validite == true -> 
         ( Colonne = 'Q' ; Colonne = 'q' -> 
@@ -66,13 +63,13 @@ actions_joueur(P,Tours,Token, JvJ) :-
                 writeln('Erreur !'),
                 boucle(P, Tours,JvJ)
             ;
-                ajout_jeton(P,Token,Position,NP),
+                ajout_jeton(P,Jeton,Position,NP),
                 afficher_etat(NP),
-                verifier_victoire(RP, Token, Position, Victoire),
+                verifier_victoire(RP, Jeton, Position, Victoire),
                 (Victoire = true ->
                     nl,
                     write('Vous avez gagné joueur '),
-                    writeln(Token),
+                    writeln(Jeton),
                     true
                 ;
                     ToursSuivant is Tours + 1,
@@ -86,37 +83,33 @@ actions_joueur(P,Tours,Token, JvJ) :-
         boucle(P, Tours, JvJ)
     ).
 
-actions_IA(P,Tours,Token,JvJ) :-
+actions_joueur(Jeton, Colonne) :-
+    write('Joueur '),
+    writeln(Jeton),
+    writeln('Entrez un numéro de colonne (Q ou q pour quitter):'),
+    read(Reponse),
+    Colonne = Reponse.
+
+actions_IA(Jeton, Colonne) :-
     write('IA '),
-    writeln(Token),
+    writeln(Jeton),
+    random_between(1,3, Pos1),
+    position_a_coord(Pos1, Pos1Ligne, Pos1Colonne),
+    jetons_alignes(P, Jeton, Pos1Ligne, Pos1Colonne, 42, 0, 0, 0, 0,NCptL_Pos1, NCptC_Pos1, NCptDDs_Pos1, NCptDMt_Pos1),
+    random_between(5,7, Pos2),
+    position_a_coord(Pos2, Pos2Ligne, Pos2Colonne),
+    jetons_alignes(P, Jeton, Pos2Ligne, Pos2Colonne, 42, 0, 0, 0, 0,NCptL_Pos2, NCptC_Pos2, NCptDDs_Pos2, NCptDMt_Pos2),
+    position_a_coord(4, Pos3Ligne, Pos3Colonne),
+    jetons_alignes(P, Jeton, Pos3Ligne, Pos3Colonne, 42, 0, 0, 0, 0,NCptL_Pos3, NCptC_Pos3, NCptDDs_Pos3, NCptDMt_Pos3),
+    
+    member(3, [NCptL_Pos1, NCptC_Pos1, NCptDDs_Pos1, NCptDMt_Pos1,NCptL_Pos2, NCptC_Pos2, NCptDDs_Pos2, NCptDMt_Pos2, NCptC_Pos3, NCptDDs_Pos3, NCptDMt_Pos3]),
 
-    random_between(1,7, Colonne),
+    Colonne is 
+    % tester 3 positions differentes
+    % utiliser jetons_alignes
+    % prendre la meilleur des 3 positions
 
-    verifier_validite(Colonne, Validite),
-    ( Validite == true -> 
-        reverse(P, RP), % renverser le plateau
-        case_disponible(Colonne, RP, 42, Position),
-        (Position = false ->
-            writeln('Erreur !'),
-            boucle(P, Tours, JvJ)
-        ;
-            ajout_jeton(P,Token,Position,NP),
-            afficher_etat(NP),
-            verifier_victoire(RP, Token, Position, Victoire),
-            (Victoire = true ->
-                nl,
-                write('IA a gagné '),
-                true
-            ;
-                ToursSuivant is Tours + 1,
-                boucle(NP, ToursSuivant, JvJ) 
-            )
 
-        )
-        
-    ;
-        boucle(P, Tours, JvJ)
-    ).
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -152,9 +145,15 @@ afficher_plateau([T|Q]) :-
   ( M == 1 -> writeln(''); true),
   afficher_plateau(Q).
 
-verifier_victoire(P, Token, Position, Victoire) :-
+verifier_victoire(P, Jeton, Position, Victoire) :-
     position_a_coord(Position, PosLigne, PosColonne),
-    jetons_alignes(P, Token, PosLigne, PosColonne, 42, 0, 0, 0, 0, Victoire).
+    writeln('here verif'),
+    jetons_alignes(P, Jeton, PosLigne, PosColonne, 42, 0, 0, 0, 0,NCptL, NCptC, NCptDDs, NCptDMt),
+    ( NCptL == 3; NCptC == 3; NCptDDs ==3; NCptDMt == 3 ->
+        Victoire = true
+    ;
+        Victoire = false
+    ).
     
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -196,13 +195,7 @@ case_disponible(Colonne, [PT|PQ], N, Position) :-
         % N1 us N-1
         % => case_dispo(Colonne, PQ, N1)
 
-jetons_alignes(_,_, _, _, -1, _, _, _, _, Victoire) :- 
-    Victoire = true.
-
-jetons_alignes(_,_, _, _, 0, _, _, _, _, Victoire) :- 
-    Victoire = false.
-
-jetons_alignes([PT|PQ],Token, PosLigne, PosColonne, N, CptL, CptC, CptDDs, CptDMt, Victoire) :-
+jetons_alignes([PT|PQ],Jeton, PosLigne, PosColonne, N, CptL, CptC, CptDDs, CptDMt,NCptL, NCptC, NCptDDs, NCptDMt) :-
     % Passer N en coordonées 2D
     position_a_coord(N, Ligne, Colonne),
     % Verifier si CoordN correspond à ligne, colonne, diagonales..
@@ -213,55 +206,59 @@ jetons_alignes([PT|PQ],Token, PosLigne, PosColonne, N, CptL, CptC, CptDDs, CptDM
     
     % Si la case est dans la même ligne que le jeton joué
     (DansLigne == true ->
-        ( PT == Token ->
-            NCptL is CptL + 1 
+        ( PT == Jeton ->
+            TmpCptL is CptL + 1 
         ;
-            NCptL is 0
+            TmpCptL is 0
         )
     ; 
-        NCptL is CptL
+        TmpCptL is CptL
     ),
     
      % Si la case est dans la même colonne que le jeton joué
     (DansColonne == true ->
-        ( PT == Token ->
-            NCptC is CptC + 1 
+        ( PT == Jeton ->
+            TmpCptC is CptC + 1 
         ;
-            NCptC is 0
+            TmpCptC is 0
         )
     ; 
-        NCptC is CptC
+        TmpCptC is CptC
     ),
 
     % Si la case est dans la même diag descendante que le jeton joué
     (DansDiagDs == true ->
-        ( PT == Token ->
-            NCptDDs is CptDDs + 1 
+        ( PT == Jeton ->
+            TmpCptDDs is CptDDs + 1 
         ;
-            NCptDDs is 0
+            TmpCptDDs is 0
         )
     ; 
-        NCptDDs is CptDDs
+        TmpCptDDs is CptDDs
     ),
 
     
     % Si la case est dans la même diag montante que le jeton joué
     (DansDiagMt == true ->
-        ( PT == Token ->
-            NCptDMt is CptDMt + 1 
+        ( PT == Jeton ->
+            TmpCptDMt is CptDMt + 1 
         ;
-            NCptDMt is 0
+            TmpCptDMt is 0
         )
     ; 
-        NCptDMt is CptDMt
+        TmpCptDMt is CptDMt
     ),
 
+    % Check if any counter has reached 3
+    ( N > 1, TmpCptL < 3, TmpCptC < 3, TmpCptDDs < 3, TmpCptDMt < 3 ->
+        N1 is N - 1,
+        jetons_alignes(PQ, Jeton, PosLigne, PosColonne, N1, TmpCptL, TmpCptC, TmpCptDDs, TmpCptDMt, NCptL, NCptC, NCptDDs, NCptDMt)
+    ;
+        write('end'), nl,
+        % Debugging
+        write('Counters: '), write([TmpCptL, TmpCptC, TmpCptDDs, TmpCptDMt]), nl,
 
-    ( NCptL == 3; NCptC == 3; NCptDDs ==3; NCptDMt == 3 ->
-        jetons_alignes(_,_, _, _, -1,NCptL, NCptC, NCptDDs, NCptDMt, Victoire)
-    ;  
-        N1 is N -1,
-        jetons_alignes(PQ,Token, PosLigne, PosColonne, N1, NCptL, NCptC, NCptDDs, NCptDMt,Victoire)  
+        NCptL = TmpCptL, NCptC = TmpCptC, NCptDDs = TmpCptDDs, NCptDMt = TmpCptDMt
     ).
 
 
