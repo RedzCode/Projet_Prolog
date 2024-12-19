@@ -49,7 +49,7 @@ boucle(P, Tours, JvJ) :-
     ((JvJ = true; Jeton = 'R') -> 
         actions_joueur(Jeton, Colonne) 
     ;
-        actions_IA(Jeton, Colonne)
+        actions_IA(Jeton, Colonne, P)
     ),
 
     verifier_validite(Colonne, Validite),
@@ -90,45 +90,38 @@ actions_joueur(Jeton, Colonne) :-
     read(Reponse),
     Colonne = Reponse.
 
-actions_IA(Jeton, Colonne) :-
+actions_IA(Jeton, Colonne, P) :-
     write('IA '),
     writeln(Jeton),
 
-    random_between(1, 3, Pos1),
-    position_a_coord(Pos1, Pos1Ligne, Pos1Colonne),
-    jetons_alignes(P, Jeton, Pos1Ligne, Pos1Colonne, 42, 0, 0, 0, 0, NCptL_Pos1, NCptC_Pos1, NCptDDs_Pos1, NCptDMt_Pos1),
-    Score1 is NCptL_Pos1 + NCptC_Pos1 + NCptDDs_Pos1 + NCptDMt_Pos1,
+    extract_line(6, P, Line1),
+    extract_column(6, P, Col1),
 
-    random_between(5, 7, Pos2),
-    position_a_coord(Pos2, Pos2Ligne, Pos2Colonne),
-    jetons_alignes(P, Jeton, Pos2Ligne, Pos2Colonne, 42, 0, 0, 0, 0, NCptL_Pos2, NCptC_Pos2, NCptDDs_Pos2, NCptDMt_Pos2),
-    Score2 is NCptL_Pos2 + NCptC_Pos2 + NCptDDs_Pos2 + NCptDMt_Pos2,
+    writeln(Line1),
+        writeln(Col1),
 
-    Pos3 is 4,
-    position_a_coord(Pos3, Pos3Ligne, Pos3Colonne),
-    jetons_alignes(P, Jeton, Pos3Ligne, Pos3Colonne, 42, 0, 0, 0, 0, NCptL_Pos3, NCptC_Pos3, NCptDDs_Pos3, NCptDMt_Pos3),
-    Score3 is NCptL_Pos3 + NCptC_Pos3 + NCptDDs_Pos3 + NCptDMt_Pos3,
+    Colonne is 4.
 
-    % Debugging scores
-    writeln(['Pos1 Score:', Score1]),
-    writeln(['Pos2 Score:', Score2]),
-    writeln(['Pos3 Score:', Score3]),
-
-    ( Score1 > Score2, Score1 > Score3 ->
-        Colonne = Pos1
-    ; Score2 > Score1, Score2 > Score3 ->
-        Colonne = Pos2
-    ;
-        Colonne = Pos3
-    ),
-    
-    writeln(Colonne)
-    .
     % tester 3 positions differentes
     % utiliser jetons_alignes
     % prendre la meilleur des 3 positions
 
+extract_line(LineNumber, Grid, Line) :-
+    RowWidth = 7,
+    StartIndex is (LineNumber - 1) * RowWidth,
+    length(Line, RowWidth),
+    append(Prefix, Rest, Grid),  % Split Grid into Prefix and Rest
+    length(Prefix, StartIndex), % Ensure Prefix has StartIndex elements
+    append(Line, _, Rest).      % Extract the Line from Rest
 
+
+extract_column(ColumnNumber, Grid, Column) :-
+    RowWidth = 7,
+    findall(Element,
+        (between(0, 5, RowIndex),  % Rows are indexed 0 to 5
+         Index is RowIndex * RowWidth + ColumnNumber - 1,
+         nth0(Index, Grid, Element)),
+        Column).
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -273,7 +266,7 @@ jetons_alignes([PT|PQ],Jeton, PosLigne, PosColonne, N, CptL, CptC, CptDDs, CptDM
         N1 is N - 1,
         jetons_alignes(PQ, Jeton, PosLigne, PosColonne, N1, TmpCptL, TmpCptC, TmpCptDDs, TmpCptDMt, NCptL, NCptC, NCptDDs, NCptDMt)
     ;
-        write('end'), nl,
+        write('jetonaligne'), nl,
         % Debugging
         write('Counters: '), write([TmpCptL, TmpCptC, TmpCptDDs, TmpCptDMt]), nl,
 
