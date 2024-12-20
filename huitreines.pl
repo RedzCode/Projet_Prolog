@@ -7,13 +7,6 @@
 %Chacun des termes est différent donc on valide également la condition des lignes
 echiquier([1,2,3,4,5,6,7,8]). %Ce prédicat n'est pas réutilisé
 
-%Numéro des colonnes (indices de l'echiquier)
-%indice(0,[X|_],X).
-%indice(N,[_|Q],X):-
-%    N>0,
-%    N1 is N-1,
-%    indice(N1,[_|Q],X).
-
 %"Numéro" des diagonales 
 %diagonales 1 :  \\\\\\\ de haut à droite (1) jusqu'à bas à gauche (15)
 diagonale1([], []). 
@@ -65,7 +58,6 @@ genese(N, Liste, Condition) :-
     maplist(between(1, 8), Liste),   
     call(Condition, Liste),          
     !.             
-%On pourrait également entrer directement la liste dans la fonction suivante.
 
 %Fonction finale à appeler :
 huitreines() :-
