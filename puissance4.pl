@@ -15,7 +15,7 @@ choix_joueurs(JvJ) :-
     read(Reponse),
     ( Reponse == 'n'-> 
         nl,
-        writeln('Le premier joueur joue les rouges (R) ! Le deuxième les jaunes (J) !'), nl,
+        writeln('Le premier joueur joue les rouges (R) ! Le deuxieme les jaunes (J) !'), nl,
         JvJ = true
     ; Reponse == 'o'-> 
         nl,
@@ -25,6 +25,10 @@ choix_joueurs(JvJ) :-
         choix_joueurs(NJvJ),
         JvJ = NJvJ  
     ).
+
+
+
+
     
 %%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%% Boucle du jeu %%%%%%
@@ -32,7 +36,7 @@ choix_joueurs(JvJ) :-
 
 boucle(P, Tours, JvJ) :- 
     writeln('**********************'),
-    M is Tours mod 2,
+    M is Tours mod 2, % alternance entre les deux joueurs
     (M == 0 -> Jeton = 'R'; Jeton = 'J'),
 
     ActuelTour is Tours + 1,
@@ -47,13 +51,14 @@ boucle(P, Tours, JvJ) :-
         actions_IA(Jeton, Colonne, P)
     ),
 
+    % verifier si l'entrée est valide ou si le jeton sors des limites
     verifier_validite(Colonne, Validite),
     ( Validite == true -> 
-        ( Colonne = 'Q' ; Colonne = 'q' -> 
+        ( Colonne = 'Q' ; Colonne = 'q' -> % quitter le jeu
             true
         ;
             reverse(P, RP), % renverser le plateau
-            case_disponible(Colonne, RP, 42, Position),
+            case_disponible(Colonne, RP, 42, Position), % récupérer la case disponible sur la colonne
             (Position = false ->
                 writeln('Erreur !'),
                 boucle(P, Tours,JvJ)
@@ -78,6 +83,7 @@ boucle(P, Tours, JvJ) :-
         boucle(P, Tours, JvJ)
     ).
 
+% Récupérer la réponse du joueur humain
 actions_joueur(Jeton, Colonne) :-
     write('Joueur '),
     writeln(Jeton),
@@ -85,6 +91,7 @@ actions_joueur(Jeton, Colonne) :-
     read(Reponse),
     Colonne = Reponse.
 
+% Générer la réponse du joueur non humain
 actions_IA(Jeton, Colonne, P) :-
     write('IA '),
     writeln(Jeton),
@@ -94,18 +101,22 @@ actions_IA(Jeton, Colonne, P) :-
     (RD = 1 -> 
         random_between(1,7,Choix), Colonne is Choix
     ;
-        column_with_most_alignment(Jeton, P,MaxAlignment, MostAlignedColumn),
-        column_with_most_alignment('R', P,MaxAlignmentR, MostAlignedColumnR),
+        colonne_max_alignes(Jeton, P,MaxAlignes, ColonneAlignes),
+        colonne_max_alignes('R', P,MaxAlignesAdversaire, ColonneAlignesAdversaire),
 
-        (MaxAlignment = 3 ->
-            Colonne is MostAlignedColumn
+        (MaxAlignes = 3 ->
+            Colonne is ColonneAlignes
         ;
-        MaxAlignmentR = 3 ->
-            Colonne is MostAlignedColumnR
+        MaxAlignesAdversaire = 3 ->
+            Colonne is ColonneAlignesAdversaire
         ; 
-            (MaxAlignment = 0 -> random_between(1,7,Choix), Colonne is Choix ; Colonne is MostAlignedColumn)
+            (MaxAlignes = 0 -> random_between(1,7,Choix), Colonne is Choix ; Colonne is ColonneAlignes)
         )
     ).
+
+
+
+
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -122,6 +133,11 @@ plateau(['.'|Q], N) :-
     plateau(Q, N1).
 
 
+
+
+
+
+
 %%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%% Etat du jeu %%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%
@@ -133,6 +149,7 @@ afficher(P) :-
     afficher_plateau(P),
     nl.
 
+% Afficher le plateau de jeu dans la console
 afficher_plateau([]).
 afficher_plateau([T|Q]) :-
   taille_liste([T|Q], Taille),
@@ -143,6 +160,7 @@ afficher_plateau([T|Q]) :-
   ( M == 1 -> writeln(''); true),
   afficher_plateau(Q).
 
+% Verifier si un joueur a gagné
 verifier_victoire(P, Jeton, Position, Victoire) :-
     position_a_coord(Position, PosLigne, PosColonne),
     jetons_alignes(P, Jeton,Position, PosLigne, PosColonne, 42, 0, 0, 0, 0,NCptL, NCptC, NCptDDs, NCptDMt),
@@ -153,22 +171,29 @@ verifier_victoire(P, Jeton, Position, Victoire) :-
     ).
     
 
+
+
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%% Gestion des jetons %%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+% Ajouter un jeton dans la liste 
 ajout_jeton([_|PQ],Jeton,1,[Jeton|PQ]).
-
 ajout_jeton([PT|PQ],Jeton,Position,[PT|NouveauQ]) :-
     Position > 1,
     NouvellePosition is Position - 1, 
     ajout_jeton(PQ, Jeton, NouvellePosition, NouveauQ).
 
+% Vérifier si une case est disponible dans la colonne demandée, si c'est le cas retourne la position de la case
 case_disponible(_, _, 0, Position) :-
     Position = false.
-
 case_disponible(Colonne, [PT|PQ], N, Position) :-
-    TmpColonne is N mod 7, % obtenir la colonne associé à N
+    TmpColonne is N mod 7, % obtenir la colonne associé à la position N de la liste
+
+    % Si la colonne de la case N est égal à la colonne demandé 
+    % on vérifie si la valeur de la case est vide, 
+    %sinon on avance dans la liste pour vérifier la prochaine case de la colonne
     ( ( TmpColonne = Colonne; (Colonne = 7, TmpColonne = 0) )  ->
         ( PT = '.' ->
             Position = N
@@ -180,22 +205,13 @@ case_disponible(Colonne, [PT|PQ], N, Position) :-
         N1 is N-1,
         case_disponible(Colonne, PQ, N1, Position)
     ).
-    % verif si TmpColonne = Colonne
-    % Si TmpColonne = Colonne 
-        % => verif si  PQ is empty
-        % Si empty  CptL, CptC, CptDD, CptDM
-            % => casedispo = N
-        % Si non empty
-            %N1 is N-1
-            % => case_dispo(Colonne, PQ, N1)
-    % Si tmpColonne != Colonne
-        % N1 us N-1
-        % => case_dispo(Colonne, PQ, N1)
 
+% Vérifier si des jetons sont alignés
+% On compte le nombre de jetons alignés en ligne, colonne et diagonale selon la position du jeton joué
 jetons_alignes([PT|PQ],Jeton, Position, PosLigne, PosColonne, N, CptL, CptC, CptDDs, CptDMt,NCptL, NCptC, NCptDDs, NCptDMt) :-
     % Passer N en coordonées 2D
     position_a_coord(N, Ligne, Colonne),
-    % Verifier si CoordN correspond à ligne, colonne, diagonales..
+    % Verifier si les coordonnées N correspond à ligne, colonne, diagonales du jeton joué
     jeton_dans_ligne(PosLigne, Ligne, DansLigne),
     jeton_dans_colonne(PosColonne, Colonne, DansColonne),
     jeton_dans_diagDs(PosLigne, PosColonne, Ligne, Colonne,DansDiagDs),
@@ -252,7 +268,7 @@ jetons_alignes([PT|PQ],Jeton, Position, PosLigne, PosColonne, N, CptL, CptC, Cpt
         TmpCptDMt is CptDMt
     ),
 
-    % Si un des compteurs a atteint 4
+    % Si un des compteurs a atteint 4 on arrête, sinon on continue
     ( N > 1, TmpCptL < 4, TmpCptC < 4, TmpCptDDs < 4, TmpCptDMt < 4 ->
         N1 is N - 1,
         jetons_alignes(PQ, Jeton, Position, PosLigne, PosColonne, N1, TmpCptL, TmpCptC, TmpCptDDs, TmpCptDMt, NCptL, NCptC, NCptDDs, NCptDMt)
@@ -261,20 +277,20 @@ jetons_alignes([PT|PQ],Jeton, Position, PosLigne, PosColonne, N, CptL, CptC, Cpt
     ).
 
 
+% Vérifier si un jeton est dans la même ligne qu'un autre
 jeton_dans_ligne(PosLigne,Ligne, DansLigne) :-
     ( Ligne == PosLigne ->
         DansLigne = true
     ; 
         DansLigne = false
     ).
-
+% Vérifier si un jeton est dans la même colonne qu'un autre
 jeton_dans_colonne(PosColonne, Colonne, DansColonne) :-
     ( Colonne == PosColonne ->
         DansColonne = true
     ; 
         DansColonne = false
     ).
-
 % jeton situé dans la même diagonale descendante
 jeton_dans_diagDs(PosLigne, PosColonne, Ligne, Colonne, DansDiagDs) :-
     ( PosLigne - PosColonne =:= Ligne - Colonne ->
@@ -282,13 +298,29 @@ jeton_dans_diagDs(PosLigne, PosColonne, Ligne, Colonne, DansDiagDs) :-
     ; 
         DansDiagDs = false
     ).
-
+% jeton situé dans la même diagonale montante
 jeton_dans_diagMt(PosLigne, PosColonne, Ligne, Colonne, DansDiagMt) :-
     ( PosLigne + PosColonne =:= Ligne + Colonne ->
         DansDiagMt = true
     ; 
         DansDiagMt = false
     ).
+
+% Compter le nombre de jetons consécutifs dans une liste 
+nombre_jetons_consecutifs([], _, Compteur, Compteur).  % On a fini de parcourir la liste
+nombre_jetons_consecutifs([Jeton|Q], Jeton, CompteurActuel, Compteur) :- % Si le jeton correpond +1
+    NCompteurActuel is CompteurActuel + 1, 
+    nombre_jetons_consecutifs(Q, Jeton, NCompteurActuel, Compteur).
+nombre_jetons_consecutifs(['.'|Q], Jeton, CompteurActuel, Compteur) :- % Si la case est vide, on fait rien
+    NCompteurActuel is CompteurActuel,
+    nombre_jetons_consecutifs(Q, Jeton, NCompteurActuel, Compteur).
+nombre_jetons_consecutifs([Autre|_], Jeton, CompteurActuel, Compteur) :- % Si la case est à l'adversaire, on arrête de compter
+    Autre \= '.',  
+    Autre \= Jeton, 
+    NCompteurActuel is CompteurActuel,
+    nombre_jetons_consecutifs([], Jeton,NCompteurActuel, Compteur). 
+
+
 
 
 
@@ -298,7 +330,7 @@ jeton_dans_diagMt(PosLigne, PosColonne, Ligne, Colonne, DansDiagMt) :-
 
 % Taille d'une liste
 taille_liste([], 0).
-taille_liste([_|Q],Size) :- taille_liste(Q,S), Size is S+1 .
+taille_liste([_|Q],Taille) :- taille_liste(Q,T), Taille is T+1.
 
 % Verifier la validité de l'entrée du joueur
 verifier_validite(Colonne, Validite) :-
@@ -314,70 +346,48 @@ est_nombre(Colonne) :-
     number(Colonne),       
     Colonne >= 1,          
     Colonne =< 7.          
-
 % Vérifier si l'entrée est un Q
 est_quitter(Colonne) :-
     Colonne = 'Q';
     Colonne = 'q'.
 
+% Transformer la position d'une case dans la liste en des coordonnées 2D du plateau de jeu
 position_a_coord(Position, Ligne, Colonne) :-
     divmod(Position, 7, Quotient, Reste),
     (Reste = 0 -> Ligne is Quotient; Ligne is Quotient + 1),
     Mod is Position mod 7,
-    ( Mod = 0  -> Colonne is 7; Colonne is Position mod 7).      
+    ( Mod = 0  -> Colonne is 7; Colonne is Position mod 7).     
 
-
-
-
-% Helper predicate to filter out unavailable columns
-exclude_unavailable_columns([], _, [], _).
-exclude_unavailable_columns([AlignmentCount-Column|Rest], Grid, Filtered, Jeton) :-
-    case_disponible(Column, Grid, 42, Position),
-    ( Position \= false -> % Check if column is available
-        Filtered = [AlignmentCount-Column|RestFiltered] % Keep it
-    ;   Filtered = RestFiltered % Skip it
-    ),
-    exclude_unavailable_columns(Rest, Grid, RestFiltered, Jeton).
-
-% Find the column with the most aligned tokens of Jeton
-column_with_most_alignment(Jeton, Grid,MaxAlignment, MostAlignedColumn) :-
-    numlist(1, 7, Columns), % Generate a list of column indices
-    findall(AlignmentCount-ColumnNumber,
-        (member(ColumnNumber, Columns),
-         extract_column(ColumnNumber, Grid, Column),
-         count_consecutive(Column, Jeton, 0, AlignmentCount)),
-        AlignmentCounts),
-
-    reverse(Grid, RP), % renverser le plateau
-    exclude_unavailable_columns(AlignmentCounts, RP, AvailableAlignmentCounts, Jeton),
-    max_member(MaxAlignment-MostAlignedColumn, AvailableAlignmentCounts). % Find the max alignment
-
-
-% helper predicate that tracks consecutive tokens
-% count_consecutive(List, Token, Count) will count the consecutive occurrences of Token in List
-count_consecutive([], _, Count, Count).  % Base case: no more elements, return count 0
-
-count_consecutive([Token|Tail], Token, CurrentCount, Count) :-
-    NCurrentCount is CurrentCount + 1, 
-    count_consecutive(Tail, Token, NCurrentCount, Count).
-    
-
-count_consecutive(['.'|Tail], Token, CurrentCount, Count) :-
-    NCurrentCount is CurrentCount,
-    count_consecutive(Tail, Token, NCurrentCount, Count).
-
-
-count_consecutive([Other|_], Token, CurrentCount, Count) :-
-    Other \= '.',  % Ignore '.' characters
-    Other \= Token,  % Stop counting if a different token is encountered
-    NCurrentCount is CurrentCount,
-    count_consecutive([], Token,NCurrentCount, Count).  % Continue to next element
-
-extract_column(ColumnNumber, Grid, Column) :-
-    RowWidth = 7,
+% Extraire les colonnes de la liste de jeu
+extraire_colonne(NumeroColonne, P, Colonne) :-
     findall(Element,
-        (between(0, 5, RowIndex),  % Rows are indexed 0 to 5
-         Index is RowIndex * RowWidth + ColumnNumber - 1,
-         nth0(Index, Grid, Element)),
-        Column).
- 
+        (between(0, 5, IndiceLigne),  % il y a 6 lignes
+         Indice is IndiceLigne * 7 + NumeroColonne - 1,
+         nth0(Indice, P, Element)),
+        Colonne). 
+
+% Compter le nombre d'alignement de jetons de chaque colonne
+colonne_max_alignes(Jeton, P,MaxAlignment, MostAlignedColumn) :-
+    numlist(1, 7, NumColonnes),
+    findall(NombreAlignes-NumeroColonne,
+        (member(NumeroColonne, NumColonnes),
+         extraire_colonne(NumeroColonne, P, Colonne),
+         nombre_jetons_consecutifs(Colonne, Jeton, 0, NombreAlignes)),
+        AlignesCompteurs),
+
+    reverse(P, RP), % renverser le plateau
+    exclure_non_disponibles(AlignesCompteurs, RP, ColonnesDisponibles, Jeton),
+    max_member(MaxAlignment-MostAlignedColumn, ColonnesDisponibles). % trouver la colonne avec le plus d'alignement de jetons
+
+
+% Exclure les colonnes où il n'y a plus de cases disponibles
+exclure_non_disponibles([], _, [], _).
+exclure_non_disponibles([NombreAlignes-Colonne|Reste], P, Filtres, Jeton) :-
+    case_disponible(Colonne, P, 42, Position),
+    ( Position \= false ->
+        % Case disponible, on garde la colonne
+        Filtres = [NombreAlignes-Colonne|ResteFiltres] 
+    ;   % Case non disponible on enlève la colonne
+        Filtres = ResteFiltres 
+    ),
+    exclure_non_disponibles(Reste, P, ResteFiltres, Jeton).
